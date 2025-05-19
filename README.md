@@ -3,7 +3,7 @@
 Automatically create a dark (or light mode) for your existing emacs theme.
 
 ### Why do I need this?
-I like having a light and a dark theme, but it's a pain to maintain. Every time I add custom font, I need to make sure I edit it so displays correctly in both modes. This lets you maintain one theme.
+I use light and dark themes, but it's a pain to maintain. Every time I add custom font, I need to make sure I edit it so displays correctly in both modes. This lets you maintain one theme, and get the second automatically.
 
 ### How do I use it?
 ``` M-x automagic-dark-mode ``` to turn it on, and again to turn it off.
