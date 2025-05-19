@@ -1,6 +1,6 @@
 # Automagic Dark Theme
 
-Automatically create a dark (or light mode) for your existing emacs theme.
+Automatically create a dark (or light) mode for your existing emacs theme.
 
 
 ### Why do I need this?
