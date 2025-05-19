@@ -16,13 +16,25 @@ Returns the remap cookie."
 (provide-theme 'automagic-dark)
 (defvar info1)
 
+(require 'cl-lib)
+
+(defun automagic-dark--initial-face-list (face)
+  (reduce
+   (lambda (x y) (cons (car y) (cons (cdr y) x)))
+   (remove-if (lambda (x) (or (eq (car x) :background)
+			      (eq (car x) :foreground)
+			      ))
+	      (mapcar (lambda (x)
+		     (cons (car x) (face-attribute face (car x))))
+	       (face-all-attributes face)))
+   :initial-value (list)))
 
 (defun  automagic-dark--invert-all-faces (inversion-function &optional background-inversion-function)
   "Invert all faces, given an inversion function."
   (let ((background-inversion-function (or background-inversion-function inversion-function)))
     (dolist (f (face-list))
       (progn
-	(let* ((customization-list (list))
+	(let* ((customization-list (automagic-dark--initial-face-list f))
 	       (orig-fg (face-attribute f :foreground nil t))
 	       (orig-bg (face-attribute f :background nil t)))
 	  (setq info1 "hi")
@@ -223,4 +235,14 @@ Returns the remap cookie."
 	(automagic-dark--invert-all-faces automagic-dark-color-inverter)
 	(enable-theme 'automagic-dark))
     (reset-dark-theme)))
+
+
+(face-all-attributes 'default)
+
+
+
+(cdr (car (face-all-attributes 'font-lock-keyword-face)))
+
+(let ((attrs (face-all-attributes 'font-lock-keyword-face)))
+  (cl-loop for (key value) on attrs by #'cddr collect value))
 
