@@ -8,7 +8,13 @@ I use light and dark themes, but it's a pain to maintain. Every time I add custo
 
 ### How do I use it?
 ``` M-x automagic-dark-mode ``` to turn it on, and again to turn it off.
-#### Installation
+
+#### Caveats
+
+- If you set your themes with custom-set-faces, these will take priority over the colors set by automagic, and you'll get weird looking behavior.
+- If you switch themes while automagic is on, stuff will break.
+
+## Installation
 Download ```automagic-dark-theme.el``` and put it somewhere in your load path. Then require automagic-dark-mode.
 
 If you downloaded it into "~/.emacs.d/custom/automagic-dark-theme.el", you would do:
@@ -17,11 +23,6 @@ If you downloaded it into "~/.emacs.d/custom/automagic-dark-theme.el", you would
 (add-to-list 'load-path "~/.emacs.d/custom")
 (require 'automagic-dark-mode)
 ```
-
-#### Caveats
-
-- If you set your themes with custom-set-faces, these will take priority over the colors set by automagic, and you'll get weird looking behavior.
-- If you switch themes while automagic is on, stuff will break.
 
 
 ## Customizations
