@@ -1,27 +1,50 @@
-(defvar automagic-dark--invert-face-cookies nil)
-
-(defun automagic-dark--color-invert-face (face inversion-function &optional background-p)
+;;; -*- lexical-binding: t -*-
+(defun automagic-dark--color-customization (face inversion-function &optional background-p)
   "Invert the luminance (L) of FACE’s effective color.
 If BACKGROUND-P is non‑nil, operate on :background instead of :foreground.
 Returns the remap cookie."
   (let* ((attr     (if background-p :background :foreground))
          (orig-col (face-attribute face attr nil t))
 	 (new-col (apply inversion-function (list orig-col))))
-    (face-remap-add-relative face (list attr new-col))))
+    (list attr new-col)))
+
+
+(deftheme automagic-dark
+  "A simple custom theme with no customizations.")
+
+
+(provide-theme 'automagic-dark)
+(defvar info1)
+
 
 (defun  automagic-dark--invert-all-faces (inversion-function &optional background-inversion-function)
+  "Invert all faces, given an inversion function."
   (let ((background-inversion-function (or background-inversion-function inversion-function)))
-    (setq automagic-dark--invert-face-cookies nil)
     (dolist (f (face-list))
-      (progn 
-	(let* ((orig (face-attribute f :foreground nil t)))
-	  (when (and orig (not (eq orig 'unspecified)))
-            (let ((cookie (automagic-dark--color-invert-face f inversion-function)))
-              (push cookie automagic-dark--invert-face-cookies))))
-	(let* ((orig (face-attribute f :background nil t)))
-	  (when (and orig (not (eq orig 'unspecified)))
-            (let ((cookie (automagic-dark--color-invert-face f background-inversion-function :background)))
-              (push cookie automagic-dark--invert-face-cookies))))))))
+      (progn
+	(let* ((customization-list (list))
+	       (orig-fg (face-attribute f :foreground nil t))
+	       (orig-bg (face-attribute f :background nil t)))
+	  (setq info1 "hi")
+	  (when (and orig-fg (not (eq orig-fg 'unspecified)))
+	    (setq customization-list
+		  (append (automagic-dark--color-customization f inversion-function)
+			  customization-list)))
+	  (setq info1 customization-list)
+
+	  (when (and orig-bg (not (eq orig-bg 'unspecified)))
+	    (setq customization-list
+		  (append (automagic-dark--color-customization f #'automagic-dark-scaled-luminance-invert :background)
+			  customization-list)))
+	  (setq info1 customization-list)
+	  (when customization-list
+	    (custom-theme-set-faces
+	     'automagic-dark
+	     `(,f ((t ,@customization-list))))))))))
+
+
+
+
     
 (defun automagic-dark--remove-all-invert-remaps ()
   "Undo all face‑luminance‑invert remappings in this buffer."
@@ -29,8 +52,6 @@ Returns the remap cookie."
   (dolist (cookie my/invert-face-cookies)
     (face-remap-remove-relative cookie))
   (setq my/invert-face-cookies nil))
-
-
 
 
 (defun automagic-dark-invert-color-cielab (color)
@@ -76,38 +97,41 @@ Returns the remap cookie."
     (apply #'color-rgb-to-hex new-rgb)))
 
 (defun automagic-dark-add-luminance (color inc)
-  "Invert the lightness of COLOR while preserving hue and saturation."
+  "Add increment to the luminance value of color."
   (let* ((rgb (color-name-to-rgb color)) ;; RGB 0..1 floats
          (hsl (apply #'color-rgb-to-hsl rgb))
          (h (nth 0 hsl))
          (s (nth 1 hsl))
          (l (nth 2 hsl))
+	 (s-new (+ s (* automagic-dark-sat-boost (abs inc))))
+	 (s-new (if (> s-new 1) s s-new))
          (new-l (+ l inc))
-         (new-rgb (color-hsl-to-rgb h s new-l)))
+         (new-rgb (color-hsl-to-rgb h s-new new-l)))
     (apply #'color-rgb-to-hex new-rgb)))
 
 
+
 (defun automagic-dark-scaled-luminance-invert (color)
-  "Invert the lightness of COLOR while preserving hue and saturation."
+  "Invert the lightness of COLOR, but scale it based on perceptual feeling."
   (let* ((rgb (color-name-to-rgb color)) ;; RGB 0..1 floats
          (hsl (apply #'color-rgb-to-hsl rgb))
          (h (nth 0 hsl))
          (s (nth 1 hsl))
          (l (nth 2 hsl))
-	 (inv-l (- 1 (expt l 0.8)))
+	 (inv-l (- 1 (expt l automagic-dark-luminance-inversion-exp)))
          (new-rgb (color-hsl-to-rgb h s inv-l)))
     (apply #'color-rgb-to-hex new-rgb)))
 
 
 (defun automagic-dark--get-luminance (color)
-  "Invert the lightness of COLOR while preserving hue and saturation."
+  "Get the luminance of COLOR."
   (let* ((rgb (color-name-to-rgb color)) ;; RGB 0..1 floats
          (hsl (apply #'color-rgb-to-hsl rgb))
          (l (nth 2 hsl)))
     l))
 
 (defun automagic-dark--wcag-luminance (color)
-  "Compute the relative luminance of COLOR, a string like \"#rrggbb\"."
+  "Compute the relative luminance of COLOR."
   (let* ((rgb (color-name-to-rgb color))
          (linear (mapcar (lambda (c)
                            (if (<= c 0.03928)
@@ -127,28 +151,31 @@ Returns the remap cookie."
          (darker (min l1 l2)))
     (/ (+ lighter 0.05) (+ darker 0.05))))
 
-
 (defun automagic-dark-invert-luminance-with-wcag-contrast (fg)
+  "Invert the luminance, ubut additionally modify it until
+ it has the same WCAG ratio as it did previously"
   (let* ((old-bg (face-attribute 'default :background))
-	 (new-bg (scaled-luminance-invert (face-attribute 'default :background)))
-	 (new-fg (luminance-invert fg))
-	 (old-ratio (wcag-contrast-ratio fg old-bg))
-	 (step (if (> (wcag-luminance old-bg)
-		     (wcag-luminance new-bg))
+	 (new-bg (automagic-dark-scaled-luminance-invert (face-attribute 'default :background)))
+	 (new-fg (automagic-dark-luminance-invert fg))
+	 
+	 (old-ratio (automagic-dark--wcag-contrast-ratio fg old-bg))
+	 (step (if (> (automagic-dark--wcag-luminance old-bg)
+		     (automagic-dark--wcag-luminance new-bg))
 		  0.05
 		 -0.05)))
     (let ((curr-fg new-fg))
-      (while (and (> (wcag-contrast-ratio curr-fg new-bg) (* old-ratio 0.9))
-		  (> (- (get-luminance curr-fg) step) 0)
-		  (< (- (get-luminance curr-fg) step) 1))
-	(setq curr-fg (add-luminance curr-fg (- 0 step))))
-      (while (and (< (wcag-contrast-ratio curr-fg new-bg) (/ old-ratio 3))
-		  (> (+ (get-luminance curr-fg) step) 0)
-		  (< (+ (get-luminance curr-fg) step) 1))
-	(setq curr-fg (add-luminance curr-fg step)))
-      (message "new ratio")
-      (message (number-to-string (wcag-contrast-ratio curr-fg new-bg)))
+      (while (and (> (automagic-dark--wcag-contrast-ratio curr-fg new-bg) (* old-ratio 0.81))
+		  (> (- (automagic-dark--get-luminance curr-fg) step) 0)
+		  (< (- (automagic-dark--get-luminance curr-fg) step) 1))
+	(setq curr-fg (automagic-dark-add-luminance curr-fg (- 0 step))))
+      (while (and (or (< (automagic-dark--wcag-contrast-ratio curr-fg new-bg) (/ old-ratio automagic-dark-wcag-ratio))
+		      (< (automagic-dark--wcag-contrast-ratio curr-fg new-bg) automagic-global-min-contrast))
+		  (> (+ (automagic-dark--get-luminance curr-fg) step) 0)
+		  (< (+ (automagic-dark--get-luminance curr-fg) step) 1))
+	(setq curr-fg (automagic-dark-add-luminance curr-fg step)))
       curr-fg)))
+
+
 
 
 (defcustom automagic-dark-color-inverter #'automagic-dark-invert-luminance-with-wcag-contrast
@@ -158,7 +185,33 @@ Returns the remap cookie."
           (const :tag "pure invert" automagic-dark-pure-invert)
           (const :tag "luminance invert" automagic-dark-luminance-invert)
           (const :tag "cielab invert" automagic-dark-invert-color-cielab))
-  :group 'my-custom-group)
+  :group 'automagic-dark)
+
+(defcustom automagic-dark-wcag-ratio 4
+  "ratio to use for wcag contrast preservation"
+  :group 'automagic-dark)
+
+(defcustom automagic-dark-luminance-inversion-exp 1.1
+  "exponent to use for scaled luminance inversion"
+  :group 'automagic-dark)
+
+(defcustom automagic-dark-sat-boost 1
+  "exponent to use for sat boosting"
+  :group 'automagic-dark)
+
+(defcustom automagic-global-min-contrast 2
+  "min contrast to use for wcag"
+  :group 'automagic-dark)
+
+
+(deftheme automagic-empty-theme "unused empty theme")
+
+
+(defun reset-dark-theme ()
+  (disable-theme 'automagic-dark)
+  (setplist 'automagic-dark nil)
+  (deftheme automagic-dark "automagic dark theme")
+  (provide-theme 'automagic-dark))
 
 
 (define-minor-mode automagic-dark-mode
@@ -166,5 +219,8 @@ Returns the remap cookie."
   :lighter "Dark"
   :global 't
   (if automagic-dark-mode
-      (invert-all-faces automagic-dark-color-inverter)
-    (remove-all-invert-remaps)))
+      (progn
+	(automagic-dark--invert-all-faces automagic-dark-color-inverter)
+	(enable-theme 'automagic-dark))
+    (reset-dark-theme)))
+
