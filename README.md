@@ -2,6 +2,9 @@
 
 Automatically create a dark (or light mode) for your existing emacs theme.
 
+[light theme](https://github.com/sstraust/automagic-dark-theme/iconLight.png)
+[dark theme](https://github.com/sstraust/automagic-dark-theme/iconDark.png)
+
 ### Why do I need this?
 I use light and dark themes, but it's a pain to maintain. Every time I add custom font, I need to make sure I edit it so displays correctly in both modes. This lets you maintain one theme, and get the second automatically.
 
