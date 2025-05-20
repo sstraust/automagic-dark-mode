@@ -17,9 +17,9 @@
   "Get all the currently active attributes for a face, except foreground and background.
 For every attribute that is not the foreground or background, we want to copy over
 the previously existing attribute."
-  (reduce
+  (cl-reduce
    (lambda (x y) (cons (car y) (cons (cdr y) x)))
-   (remove-if (lambda (x) (or (eq (car x) :background)
+   (cl-remove-if (lambda (x) (or (eq (car x) :background)
 			      (eq (car x) :foreground)
 			      ))
 	      (mapcar (lambda (x)
@@ -119,6 +119,7 @@ saturation if sat-boost is non-zero."
          (s (nth 1 hsl))
          (l (nth 2 hsl))
 	 (inv-l (- 1 (expt l automagic-dark-luminance-inversion-exp)))
+	 (inv-l (max (min inv-l 1) 0))
          (new-rgb (color-hsl-to-rgb h s inv-l)))
     (apply #'color-rgb-to-hex new-rgb)))
 

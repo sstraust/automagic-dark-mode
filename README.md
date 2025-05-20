@@ -24,7 +24,7 @@ If you downloaded it into "~/.emacs.d/custom/automagic-dark-mode.el", you would 
 (require 'automagic-dark-mode)
 ```
 
-In my own config, I do:
+In my own config, I also do:
 ```
 (global-set-key (kbd "C-c d") 'automagic-dark-mode)
 ```
