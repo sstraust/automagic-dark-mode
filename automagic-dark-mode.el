@@ -1,24 +1,22 @@
 ;;; -*- lexical-binding: t -*-
+(require 'cl-lib)
+
 (defun automagic-dark--color-customization (face inversion-function &optional background-p)
-  "Invert the luminance (L) of FACE’s effective color.
-If BACKGROUND-P is non‑nil, operate on :background instead of :foreground.
-Returns the remap cookie."
+  "Apply inversion function to an attribute and return the customization list"
   (let* ((attr     (if background-p :background :foreground))
          (orig-col (face-attribute face attr nil t))
 	 (new-col (apply inversion-function (list orig-col))))
     (list attr new-col)))
 
 
-(deftheme automagic-dark
-  "A simple custom theme with no customizations.")
-
-
+(deftheme automagic-dark "A simple custom theme that inverts your current theme.")
 (provide-theme 'automagic-dark)
-(defvar info1)
 
-(require 'cl-lib)
 
 (defun automagic-dark--initial-face-list (face)
+  "Get all the currently active attributes for a face, except foreground and background.
+For every attribute that is not the foreground or background, we want to copy over
+the previously existing attribute."
   (reduce
    (lambda (x y) (cons (car y) (cons (cdr y) x)))
    (remove-if (lambda (x) (or (eq (car x) :background)
@@ -29,6 +27,7 @@ Returns the remap cookie."
 	       (face-all-attributes face)))
    :initial-value (list)))
 
+
 (defun  automagic-dark--invert-all-faces (inversion-function &optional background-inversion-function)
   "Invert all faces, given an inversion function."
   (let ((background-inversion-function (or background-inversion-function inversion-function)))
@@ -37,27 +36,20 @@ Returns the remap cookie."
 	(let* ((customization-list (automagic-dark--initial-face-list f))
 	       (orig-fg (face-attribute f :foreground nil t))
 	       (orig-bg (face-attribute f :background nil t)))
-	  (setq info1 "hi")
 	  (when (and orig-fg (not (eq orig-fg 'unspecified)))
 	    (setq customization-list
 		  (append (automagic-dark--color-customization f inversion-function)
 			  customization-list)))
-	  (setq info1 customization-list)
-
 	  (when (and orig-bg (not (eq orig-bg 'unspecified)))
 	    (setq customization-list
 		  (append (automagic-dark--color-customization f #'automagic-dark-scaled-luminance-invert :background)
 			  customization-list)))
-	  (setq info1 customization-list)
 	  (when customization-list
 	    (custom-theme-set-faces
 	     'automagic-dark
 	     `(,f ((t ,@customization-list))))))))))
 
 
-
-
-    
 (defun automagic-dark--remove-all-invert-remaps ()
   "Undo all face‑luminance‑invert remappings in this buffer."
   (interactive)
@@ -68,12 +60,7 @@ Returns the remap cookie."
 
 (defun automagic-dark-invert-color-cielab (color)
   "Invert COLOR, which can be a name or hex-string, via CIE L*a*b*."
-  (let* (;; 1. From hex string to normalized RGB floats [0,1]
-         (rgb      (color-name-to-rgb color))
-         (r        (nth 0 rgb))
-         (g        (nth 1 rgb))
-         (b        (nth 2 rgb))
-         ;; 2. Convert to CIELAB
+  (let* ((rgb      (color-name-to-rgb color))
          (lab      (apply #'color-srgb-to-lab rgb))
          (L        (nth 0 lab))
          (a        (nth 1 lab))
@@ -109,7 +96,8 @@ Returns the remap cookie."
     (apply #'color-rgb-to-hex new-rgb)))
 
 (defun automagic-dark-add-luminance (color inc)
-  "Add increment to the luminance value of color."
+  "Add increment to the luminance value of color. Also increment
+saturation if sat-boost is non-zero."
   (let* ((rgb (color-name-to-rgb color)) ;; RGB 0..1 floats
          (hsl (apply #'color-rgb-to-hsl rgb))
          (h (nth 0 hsl))
@@ -236,13 +224,4 @@ Returns the remap cookie."
 	(enable-theme 'automagic-dark))
     (reset-dark-theme)))
 
-
-(face-all-attributes 'default)
-
-
-
-(cdr (car (face-all-attributes 'font-lock-keyword-face)))
-
-(let ((attrs (face-all-attributes 'font-lock-keyword-face)))
-  (cl-loop for (key value) on attrs by #'cddr collect value))
-
+(provide 'automagic-dark-mode)

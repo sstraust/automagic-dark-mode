@@ -1,6 +1,6 @@
-# Automagic Dark Theme
+# Automagic Dark Mode
 
-Automatically create a dark (or light mode) for your existing emacs theme.
+Automatically create a dark (or light mode) for your existing emacs theme. 
 
 
 ### Why do I need this?
@@ -15,15 +15,20 @@ I use light and dark themes, but it's a pain to maintain. Every time I add custo
 - If you switch themes while automagic is on, stuff will break.
 
 ## Installation
-Download ```automagic-dark-theme.el``` and put it somewhere in your load path. Then require automagic-dark-mode.
+Download ```automagic-dark-mode.el``` and put it somewhere in your load path. Then require automagic-dark-mode.
 
-If you downloaded it into "~/.emacs.d/custom/automagic-dark-theme.el", you would do:
+If you downloaded it into "~/.emacs.d/custom/automagic-dark-mode.el", you would do:
 
 ```
 (add-to-list 'load-path "~/.emacs.d/custom")
 (require 'automagic-dark-mode)
 ```
 
+In my own config, I do:
+```
+(global-set-key (kbd "C-c d") 'automagic-dark-mode)
+```
+To bind it to ```Ctrl-C d```
 
 ## Customizations
 
