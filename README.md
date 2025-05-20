@@ -13,6 +13,7 @@ I use light and dark themes, but it's a pain to maintain. Every time I add custo
 
 - If you set your themes with custom-set-faces, these will take priority over the colors set by automagic, and you'll get weird looking behavior.
 - If you switch themes while automagic is on, stuff will break.
+- Does not work with color schemes defined outside of emacs (i.e. if your color scheme is provided by your terminal environment, or uses non-standard color codes, such as "#00000000-eb3")
 
 ## Installation
 Download ```automagic-dark-mode.el``` and put it somewhere in your load path. Then require automagic-dark-mode.
