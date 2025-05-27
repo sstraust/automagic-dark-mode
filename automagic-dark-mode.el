@@ -5,9 +5,7 @@
   "Apply inversion function to an attribute and return the customization list"
   (let* ((attr     (if background-p :background :foreground))
          (orig-col (face-attribute face attr nil t))
-	 (new-col (if (stringp orig-col)
-                      (funcall inversion-function orig-col)
-                    orig-col)))
+	 (new-col (apply inversion-function (list orig-col))))
     (list attr new-col)))
 
 
