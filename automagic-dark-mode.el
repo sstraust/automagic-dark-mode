@@ -36,11 +36,13 @@ the previously existing attribute."
 	(let* ((customization-list (automagic-dark--initial-face-list f))
 	       (orig-fg (face-attribute f :foreground nil t))
 	       (orig-bg (face-attribute f :background nil t)))
-	  (when (and orig-fg (not (eq orig-fg 'unspecified)))
+	  (when (and orig-fg (not (or (eq orig-fg 'unspecified)
+                                      (eq orig-fg 'reset))))
 	    (setq customization-list
 		  (append (automagic-dark--color-customization f inversion-function)
 			  customization-list)))
-	  (when (and orig-bg (not (eq orig-bg 'unspecified)))
+	  (when (and orig-bg (not (or (eq orig-bg 'unspecified)
+                                      (eq orig-bg 'reset))))
 	    (setq customization-list
 		  (append (automagic-dark--color-customization f #'automagic-dark-scaled-luminance-invert :background)
 			  customization-list)))
